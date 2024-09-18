@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         run: |
-          go build -o srmgo
+          go build -o srmgo.exe
           powershell -command "Compress-Archive -Path 'srmgo.exe', 'LICENSE', 'NOTICE' -DestinationPath 'securerm-go-windows.zip'"
 
 
