@@ -1,0 +1,56 @@
+name: Go release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+
+  build-gnu-linux:
+    name: Release - GNU/Linux
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.1'
+
+      - name: Build
+        run: |
+          go build -o srmgo
+          chmod +x srmgo
+          tar -zcf securerm-go-linux.tar.gz srmgo LICENSE NOTICE
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: securerm-go-linux.tar.gz
+
+  build-windows:
+    name: Release - Windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.0'
+
+      - name: Build
+        run: |
+          go build -o srmgo
+          powershell -command "Compress-Archive -Path 'srmgo.exe', 'LICENSE', 'NOTICE' -DestinationPath 'securerm-go-windows.zip'"
+
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: securerm-go-windows.zip
