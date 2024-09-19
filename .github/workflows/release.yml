@@ -8,7 +8,12 @@ on:
 jobs:
 
   build-gnu-linux:
-    name: Release - GNU/Linux
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - arm64
+    name: Release - GNU/Linux | ${{ matrix.arch }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -23,16 +28,20 @@ jobs:
       - name: Build
         run: |
           go build -o srmgo
-          chmod +x srmgo
-          tar -zcf securerm-go-linux.tar.gz srmgo LICENSE NOTICE
+          tar -zcf securerm-go-linux_${{ matrix.arch }}.tar.gz srmgo LICENSE NOTICE
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: securerm-go-linux.tar.gz
+          files: securerm-go-linux_${{ matrix.arch }}.tar.gz
 
   build-windows:
-    name: Release - Windows
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - arm64
+    name: Release - Windows | ${{ matrix.arch }}
     runs-on: windows-latest
     permissions:
       contents: write
@@ -53,4 +62,32 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: securerm-go-windows.zip
+          files: securerm-go-windows_${{ matrix.arch }}.zip
+
+  build-macos:
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - arm64
+    name: Release - MacOS | ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.1'
+
+      - name: Build
+        run: |
+          go build -o srmgo
+          tar -zcf securerm-go-macos_${{ matrix.arch }}.tar.gz srmgo LICENSE NOTICE
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: securerm-go-macos_${{ matrix.arch }}.tar.gz
