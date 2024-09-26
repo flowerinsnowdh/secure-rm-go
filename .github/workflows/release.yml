@@ -1,3 +1,6 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
 name: Go release
 
 on:
@@ -7,11 +10,59 @@ on:
 
 jobs:
 
-  build-gnu-linux:
-    name: Release - GNU/Linux
+  build:
+    name: Release
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        os:
+          - windows
+          - linux
+          - darwin
+        arch:
+          - amd64
+          - arm64
+        include:
+          - os: windows
+            arch: 386
+          - os: windows
+            arch: arm
+            arm: 7
+          - os: linux
+            arch: arm
+            arm: 7
+          - os: linux
+            arch: arm
+            arm: 6
+          - os: linux
+            arch: arm
+            arm: 5
+          - os: linux
+            arch: 386
+          - os: linux
+            arch: loong64
+          - os: linux
+            arch: mips
+          - os: linux
+            arch: mips64
+          - os: linux
+            arch: mips64le
+          - os: linux
+            arch: mipsle
+          - os: linux
+            arch: ppc64
+          - os: linux
+            arch: ppc64le
+          - os: linux
+            arch: riscv64
+          - os: linux
+            arch: s390x
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    env:
+      GOOS: ${{ matrix.os }}
+      GOARCH: ${{ matrix.arch }}
+      GOARM: ${{ matrix.arm }}
     steps:
       - uses: actions/checkout@v4
 
@@ -22,35 +73,26 @@ jobs:
 
       - name: Build
         run: |
-          go build -o srmgo
-          chmod +x srmgo
-          tar -zcf securerm-go-linux.tar.gz srmgo LICENSE NOTICE
+          if [ -n "$GOARM" ]; then
+              export ARCH_NAME=arm-v"$GOARM"
+          else
+              export ARCH_NAME="$GOARCH"
+          fi
 
+          if [ "$GOOS" = "windows" ]; then
+              export FILE='srmgo.exe'
+          else
+              export FILE='srmgo'
+          fi
+          
+          go build -o "$FILE"
+          mkdir release-assets/
+          if [ "$GOOS" = "windows" ]; then
+              zip release-assets/securerm-go-windows-$ARCH_NAME.zip $FILE LICENSE NOTICE    
+          else
+              tar -zcf release-assets/securerm-go-$GOOS-$ARCH_NAME.tar.gz $FILE LICENSE NOTICE
+          fi
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: securerm-go-linux.tar.gz
-
-  build-windows:
-    name: Release - Windows
-    runs-on: windows-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.23.1'
-
-      - name: Build
-        run: |
-          go build -o srmgo.exe
-          powershell -command "Compress-Archive -Path 'srmgo.exe', 'LICENSE', 'NOTICE' -DestinationPath 'securerm-go-windows.zip'"
-
-
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: securerm-go-windows.zip
+          files: release-assets/*

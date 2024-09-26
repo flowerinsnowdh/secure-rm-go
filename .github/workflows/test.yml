@@ -1,16 +1,28 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
 name: Go test
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
 
 jobs:
 
-  test-run:
-    name: Test run
-    runs-on: ubuntu-latest
+  build-unix:
+    name: Test | Unix
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+          - macos
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +31,23 @@ jobs:
         with:
           go-version: '1.23.1'
 
-      - name: Test run
+      - name: Build
         run: |
-          go build -o srmgo
+          go build -o securerm-go
+
+  test-windows:
+    name: Test | Windows
+    permissions:
+      contents: read
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.1'
+
+      - name: Build
+        run: |
+          go build -o securerm-go.exe
